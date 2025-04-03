@@ -1163,6 +1163,12 @@ namespace cauldron
         DoSampleResize(m_ResolutionInfo);
     }
 
+    void Framework::MoveEvent()
+    {
+        for (auto& rm : m_RenderModules)
+            rm->OnMove(m_ClientPosInfo);
+    }
+
     void Framework::FocusLostEvent()
     {
         for (auto compMgrIter = m_ComponentManagers.begin(); compMgrIter != m_ComponentManagers.end(); ++compMgrIter)

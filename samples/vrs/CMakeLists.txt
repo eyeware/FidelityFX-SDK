@@ -24,6 +24,36 @@
 project(FFX_VRS)
 
 # ---------------------------------------------
+# Beam Eye Tracker for foveated rendering
+# ---------------------------------------------
+# Hard-code here where you unzipped the Beam Eye Tracker SDK.
+set(BEAM_EYE_TRACKER_SDK_DIR "D:\\beam_eye_tracker_sdk-2.0.1" CACHE PATH "Path to beam_eye_tracker_client installation")
+# Verify the required directories exist
+if(NOT EXISTS "${BEAM_EYE_TRACKER_SDK_DIR}")
+message(FATAL_ERROR "beam_eye_tracker_client directory not found at ${BEAM_EYE_TRACKER_SDK_DIR}")
+endif()
+set(BEAM_EYE_TRACKER_PLATFORM "win64")
+set(BEAM_EYE_TRACKER_SHARED_LIB "beam_eye_tracker_client.dll")
+set(BEAM_EYE_TRACKER_SHARED_LIB_FULL_PATH "${BEAM_EYE_TRACKER_SDK_DIR}/bin/${BEAM_EYE_TRACKER_PLATFORM}/${BEAM_EYE_TRACKER_SHARED_LIB}")
+# Define interface library to link against
+add_library(beam_eye_tracker_client INTERFACE)
+target_include_directories(beam_eye_tracker_client
+    INTERFACE
+        ${BEAM_EYE_TRACKER_SDK_DIR}/include
+)
+target_link_libraries(beam_eye_tracker_client
+    INTERFACE
+        "${BEAM_EYE_TRACKER_SDK_DIR}/lib/${BEAM_EYE_TRACKER_PLATFORM}/beam_eye_tracker_client.lib"
+)
+set_target_properties(beam_eye_tracker_client PROPERTIES
+    INTERFACE_DLL_LOCATION "${BEAM_EYE_TRACKER_SHARED_LIB_FULL_PATH}"
+)
+# Create a target to copy the DLL to the output directory
+copyCommand("${BEAM_EYE_TRACKER_SHARED_LIB_FULL_PATH}" ${BIN_OUTPUT})
+add_custom_target(beam_eye_tracker_client_dll DEPENDS "${BIN_OUTPUT}/${BEAM_EYE_TRACKER_SHARED_LIB}")
+add_dependencies(beam_eye_tracker_client beam_eye_tracker_client_dll)
+
+# ---------------------------------------------
 # Fidelity FX render module
 # ---------------------------------------------
 
@@ -60,7 +90,7 @@ add_executable(${PROJECT_NAME} WIN32 ${default_icon_src} ${default_entry_point} 
 set(EXE_OUT_NAME ${PROJECT_NAME}_)
 
 # Link everything (including the compiler for now)
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC Framework RenderModules d3dcompiler ffx_vrs_native backend_interface)
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC Framework RenderModules d3dcompiler ffx_vrs_native backend_interface beam_eye_tracker_client)
 set_target_properties(${PROJECT_NAME} PROPERTIES
 					OUTPUT_NAME_DEBUGDX12 "${EXE_OUT_NAME}DX12D"
 					OUTPUT_NAME_DEBUGVK "${EXE_OUT_NAME}VKD"

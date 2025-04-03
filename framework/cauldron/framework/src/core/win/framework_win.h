@@ -62,7 +62,8 @@ namespace cauldron
 
         static LRESULT CALLBACK WindowProc(HWND wndHandle, UINT message, WPARAM wParam, LPARAM lParam);
         void ToggleFullscreen();
-        void OnWindowMove();
+        void KeepWindowOnMonitorIfHDR ();
+        void OnMove(int32_t left, int32_t top);
         void OnResize(uint32_t width, uint32_t height);
         void OnFocusLost();
         void OnFocusGained();
@@ -76,6 +77,7 @@ namespace cauldron
         UINT             m_WindowStyle = 0;
         PresentationMode m_PresentationMode = PRESENTATIONMODE_WINDOWED;
         bool             m_sendResizeEvent = false;
+        bool             m_sendMoveEvent = false;
         bool             m_Minimized = false;
         bool             m_Quitting = false;
     };

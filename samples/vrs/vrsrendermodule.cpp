@@ -76,6 +76,10 @@ VRSRenderModule::~VRSRenderModule()
         m_PipelineHashObjects.clear();
         m_MotionVectorsRenderSurfaces.clear();
     }
+    if(m_bet_api)
+    {
+        delete m_bet_api;
+    }
 }
 
 void VRSRenderModule::Init(const json& initData)
@@ -91,6 +95,10 @@ void VRSRenderModule::Init(const json& initData)
         m_VRSTierSupported = 1;
         GetFramework()->GetDevice()->GetFeatureInfo(DeviceFeature::VRSTier1, &m_FeatureInfoVRS);
     }
+
+    // Initialize Beam Eye Tracker
+    m_bet_api = new eyeware::beam_eye_tracker::API("FidelityFX Foveation Sample", m_bet_viewport_geometry);
+    m_bet_api->attempt_starting_the_beam_eye_tracker();
 
     BuildUI();
 
@@ -209,14 +217,40 @@ void VRSRenderModule::OnResize(const ResolutionInfo& resInfo)
         return;
     }
 
+    m_bet_viewport_geometry = eyeware::beam_eye_tracker::ViewportGeometry{
+        m_bet_viewport_geometry.point_00.x,
+        m_bet_viewport_geometry.point_00.y,
+        m_bet_viewport_geometry.point_00.x + static_cast<int32_t>(resInfo.DisplayWidth) - 1,
+        m_bet_viewport_geometry.point_00.y + static_cast<int32_t>(resInfo.DisplayHeight) - 1
+    };
+
+    m_bet_api->update_viewport_geometry(m_bet_viewport_geometry);
+
     UpdateVRSContext(false);
     UpdateVRSContext(true);
+}
+
+void VRSRenderModule::OnMove(const cauldron::ClientPosInfo& clientPosInfo)
+{
+    int32_t displayWidth  = m_bet_viewport_geometry.point_11.x - m_bet_viewport_geometry.point_00.x + 1;
+    int32_t displayHeight = m_bet_viewport_geometry.point_11.y - m_bet_viewport_geometry.point_00.y + 1;
+
+    m_bet_viewport_geometry = eyeware::beam_eye_tracker::ViewportGeometry{
+        clientPosInfo.Left,
+        clientPosInfo.Top,
+        clientPosInfo.Left + displayWidth - 1,
+        clientPosInfo.Top + displayHeight - 1
+    };
+
+    m_bet_api->update_viewport_geometry(m_bet_viewport_geometry);
 }
 
 void VRSRenderModule::Execute(double deltaTime, CommandList* pCmdList)
 {
     if (!m_EnableVariableShading)
         return;
+
+    ExecuteEyeTracker(deltaTime);
 
     if (m_ShadingRateCombinerIndex != 0)
     {
@@ -690,6 +724,47 @@ void VRSRenderModule::UpdateVRSContext(bool enabled)
         ffxVrsContextCreate(&m_VRSContext, &m_InitializationParameters);
 
         m_ContextCreated = true;
+    }
+}
+
+void VRSRenderModule::ExecuteEyeTracker(double deltaTime)
+{
+    bool invalidateFoveation = m_ShadingRateImageAlgorithmIndex == 0;  // Motion algorithm only
+    if (m_bet_api->get_tracking_data_reception_status() != eyeware::beam_eye_tracker::TrackingDataReceptionStatus::RECEIVING_TRACKING_DATA)
+    {
+        invalidateFoveation = true;
+    }
+    else
+    {
+        // Non blocking check if there is a new data frame available
+        if (m_bet_api->wait_for_new_tracking_state_set(m_bet_last_update_timestamp_sec, 0))
+        {
+            eyeware::beam_eye_tracker::TrackingStateSet trackingStateSet = m_bet_api->get_latest_tracking_state_set();
+            const eyeware::beam_eye_tracker::FoveatedRenderingState& fovParams = trackingStateSet.foveated_rendering_state();
+
+            if(fovParams.timestamp_in_seconds != eyeware::beam_eye_tracker::NULL_DATA_TIMESTAMP)
+            {
+                m_VRSFoveationCenter.x = fovParams.normalized_foveation_center.x;
+                m_VRSFoveationCenter.y = fovParams.normalized_foveation_center.y;
+                m_VRSFovRadii.radius1x1 = fovParams.normalized_foveation_radii.radius_level_1;
+                m_VRSFovRadii.radius1x2 = fovParams.normalized_foveation_radii.radius_level_2;
+                m_VRSFovRadii.radius2x2 = fovParams.normalized_foveation_radii.radius_level_3;
+                m_VRSFovRadii.radius2x4 = fovParams.normalized_foveation_radii.radius_level_4;
+            }
+            else
+            {
+                // Receiving updates, but the user's tracking is lost
+                invalidateFoveation = true;
+            }
+        }
+    }
+
+    if (invalidateFoveation)
+    {
+        // Reset to default values - effectively disabling foveation
+        m_VRSFoveationCenter.x = 0.5f;
+        m_VRSFoveationCenter.y = 0.5f;
+        m_VRSFovRadii.radius1x1 = 10.0f;
     }
 }
 

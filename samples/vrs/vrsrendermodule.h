@@ -24,6 +24,7 @@
 
 #include "core/contentmanager.h"
 #include "render/rendermodule.h"
+#include "eyeware/beam_eye_tracker.h"
 
 #include <FidelityFX/host/ffx_vrs.h>
 
@@ -84,6 +85,13 @@ public:
      * @param resInfo New resolution info.
      */
     void OnResize(const  cauldron::ResolutionInfo& resInfo) override;
+
+    /**
+     * Keep the eye tracker informed on window position. Called by the framework when the window is moved.
+     * @param clientPosInfo New window position info.
+     */
+    void OnMove(const  cauldron::ClientPosInfo& clientPosInfo) override;
+
     /**
      * Calls ExecuteVRSImageGen to dipatch computer shader to generate VRS image.
      */
@@ -131,6 +139,7 @@ private:
     void UpdateVRSInfo();
     void UpdateVRSContext(bool enabled);
 
+    void ExecuteEyeTracker(double deltaTime);
     void ExecuteVRSImageGen(double deltaTime, cauldron::CommandList* pCmdList);
 
     // Content creation helpers - not thread safe
@@ -159,6 +168,10 @@ private:
     const cauldron::Texture* m_pColorTarget   = nullptr;
     const cauldron::Texture* m_pHistoryColorBuffer   = nullptr;
     const cauldron::Texture* m_pVRSTexture      = nullptr;
+
+    eyeware::beam_eye_tracker::API * m_bet_api = nullptr;
+    eyeware::beam_eye_tracker::ViewportGeometry m_bet_viewport_geometry{0, 0, 0, 0};
+    eyeware::beam_eye_tracker::Timestamp m_bet_last_update_timestamp_sec{eyeware::beam_eye_tracker::NULL_DATA_TIMESTAMP};
 
     // FidelityFX VRS information
     FfxVrsContextDescription m_InitializationParameters = {};

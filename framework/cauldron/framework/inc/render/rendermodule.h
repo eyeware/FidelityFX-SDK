@@ -80,6 +80,11 @@ namespace cauldron
         virtual void OnResize(const ResolutionInfo& resInfo) {}
 
         /**
+         * @brief   Callback used when OnMove events occur.
+         */
+        virtual void OnMove(const ClientPosInfo& posInfo) {}
+
+        /**
          * @brief   Callback used when OnFocusLost events occur.
          */
         virtual void OnFocusLost() {}

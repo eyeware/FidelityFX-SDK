@@ -150,7 +150,9 @@ namespace cauldron
 
         case WM_MOVE:
         {
-            pFramework->m_pImpl->OnWindowMove();
+            pFramework->m_pImpl->KeepWindowOnMonitorIfHDR();
+
+            pFramework->m_pImpl->m_sendMoveEvent = true;
             break;
         }
 
@@ -278,7 +280,7 @@ namespace cauldron
         OnResize(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
     }
 
-    void FrameworkInternal::OnWindowMove()
+    void FrameworkInternal::KeepWindowOnMonitorIfHDR ()
     {
         HMONITOR currentMonitor = MonitorFromWindow(m_WindowHandle, MONITOR_DEFAULTTONEAREST);
         if (m_Monitor != currentMonitor && GetFramework()->GetSwapChain()->GetSwapChainDisplayMode() != DisplayMode::DISPLAYMODE_LDR)
@@ -325,6 +327,22 @@ namespace cauldron
 
         // Trigger a resize event for the framework
         m_pFramework->ResizeEvent();
+    }
+
+    void FrameworkInternal::OnMove(int32_t left, int32_t top)
+    {
+        // Might not be created yet
+        if (!m_pFramework->m_pSwapChain)
+            return;
+
+        // Detect minimize
+        if (m_pFramework->m_pImpl->m_Minimized)
+            return;
+
+        m_pFramework->m_ClientPosInfo = {left, top};
+
+        // Trigger a move event for the framework
+        m_pFramework->MoveEvent();
     }
 
     void FrameworkInternal::OnFocusLost()
@@ -403,6 +421,18 @@ namespace cauldron
 
                     m_sendResizeEvent = false;
                 }
+
+                if(m_sendMoveEvent){
+                    POINT windowPos = {0, 0};
+                    ClientToScreen(m_WindowHandle, &windowPos);
+
+                    const ClientPosInfo& posInfo = m_pFramework->GetClientPosInfo();
+                    if (posInfo.Left != windowPos.x || posInfo.Top != windowPos.y){
+                        OnMove(windowPos.x, windowPos.y);
+                    }
+                    m_sendMoveEvent = false;
+                }
+
                 m_pFramework->MainLoop();
             }
         }

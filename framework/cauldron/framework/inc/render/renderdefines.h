@@ -653,6 +653,15 @@ namespace cauldron
         inline float GetDisplayAspectRatio()      const { return fDisplayWidth() / fDisplayHeight(); }
     };
 
+    /// A structure representing a client position.
+    ///
+    /// @ingroup CauldronRender
+    struct ClientPosInfo
+    {
+        int32_t Left;          ///< Rect left coordinate.
+        int32_t Top;           ///< Rect top coordinate.
+    };
+
     /// An enumeration for upscaler state.
     ///
     /// @ingroup CauldronRender

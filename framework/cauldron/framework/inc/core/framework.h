@@ -546,6 +546,11 @@ namespace cauldron
          */
         const ResolutionInfo& GetResolutionInfo() const { return m_ResolutionInfo; }
 
+        /**
+         * @brief   Retrieves current <c><i>ClientPosInfo</i></c> data.
+         */
+        const ClientPosInfo& GetClientPosInfo() const { return m_ClientPosInfo; }
+
         void UpdateRenderResolution(uint32_t renderWidth, uint32_t renderHeight)
         {
             m_ResolutionInfo.RenderWidth = renderWidth;
@@ -561,6 +566,11 @@ namespace cauldron
          * @brief   Processes application resize. Will initiate resource recreation and binding processes.
          */
         void ResizeEvent();
+
+        /**
+         * @brief   Process application window move changes.
+         */
+        void MoveEvent();
 
         /**
          * @brief   Processes application focus lost event.
@@ -731,6 +741,7 @@ namespace cauldron
         std::wstring            m_CPUName = L"Not Set";
         ResolutionInfo          m_ResolutionInfo            = {1920, 1080, 1920, 1080, 1920, 1080};
         ResolutionInfo          m_BenchmarkResolutionInfo   = {1920, 1080, 1920, 1080, 1920, 1080};
+        ClientPosInfo           m_ClientPosInfo             = {0, 0};
         UpscalerState           m_UpscalingState = UpscalerState::None;
         ResolutionUpdateFunc    m_ResolutionUpdaterFn = nullptr;
         bool                    m_UpscalerEnabled = false;

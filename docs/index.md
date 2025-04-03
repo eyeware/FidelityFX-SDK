@@ -1,4 +1,10 @@
-<h1>Welcome to the AMD FidelityFX™ SDK 1.1.3</h1>
+<h1>Welcome to the AMD FidelityFX™ SDK 1.1.3 fork with Beam Eye Tracker support</h1>
+
+This is a fork from AMD FidelityFX™ SDK that demonstrates how to implement Foveated Rendering using the Beam Eye Tracker. The [Beam Eye Tracker](https://beameyetracker.com/) is a software that uses your webcam to do real-time eye tracking. Enabling foveated rendering can thus be of benefit for the many gamers who have a webcam. To focus on that, explore the [Variable Shading](/docs/techniques/variable-shading.md) sample, which was modified for this purpose. Please check [Building the samples](/docs/getting-started/building-samples.md).
+
+![alt text](/docs/samples/media/variable-shading/variable-shading-with-foveation.png)
+
+All the good stuff from AMD is described below. Please go to the official repo [FidelityFX SDK](https://gpuopen.com/amd-fidelityfx-sdk/) for up to date info on AMD FidelityFX™.
 
 ![alt text](/docs/media/fidelityfxsdk-logo-rescaled.png)
 
